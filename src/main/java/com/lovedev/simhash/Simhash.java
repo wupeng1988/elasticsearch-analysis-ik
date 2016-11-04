@@ -15,9 +15,14 @@ import java.util.List;
 public class Simhash {
 	private static final Logger logger = LoggerFactory.getLogger(Simhash.class);
 	private IWordSeg wordSeg;
+	private boolean useWeight;
 
 	public Simhash(IWordSeg wordSeg) {
+		this(wordSeg, true);
+	}
+	public Simhash(IWordSeg wordSeg, boolean weight) {
 		this.wordSeg = wordSeg;
+		this.useWeight = weight;
 	}
 
 	public int hammingDistance(int hash1, int hash2) {
@@ -28,6 +33,19 @@ public class Simhash {
 		i = i + (i >>> 8);
 		i = i + (i >>> 16);
 		return i & 0x3f;
+	}
+
+	public int weight(String text, String keyWord) {
+		if (useWeight) {
+			int i = 1;
+			int j = -1;
+			while ((j = text.indexOf(keyWord)) >= 0) {
+				i++;
+				text = text.substring(j + keyWord.length());
+			}
+			return i;
+		} else
+			return 1;
 	}
 
 	public int hammingDistance(long hash1, long hash2) {
@@ -51,9 +69,9 @@ public class Simhash {
 			long v = MurmurHash.hash64(t);
 			for (int i = bitLen; i >= 1; --i) {
 				if (((v >> (bitLen - i)) & 1) == 1)
-					++bits[i - 1];
+					bits[i - 1] += weight(doc, t);
 				else
-					--bits[i - 1];
+					bits[i - 1] -= weight(doc, t);
 			}
 		}
 		long hash = 0x0000000000000000;
@@ -75,9 +93,9 @@ public class Simhash {
 			int v = MurmurHash.hash32(t);
 			for (int i = bitLen; i >= 1; --i) {
 				if (((v >> (bitLen - i)) & 1) == 1)
-					++bits[i - 1];
+					bits[i - 1] += weight(doc, t);
 				else
-					--bits[i - 1];
+					bits[i - 1] -= weight(doc, t);
 			}
 		}
 		int hash = 0x00000000;
